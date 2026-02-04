@@ -1,0 +1,180 @@
+import cv2 as cv
+import numpy as np
+import pyzed.sl as sl
+import itertools
+import math
+
+# -----------------------------
+# Parameters
+# -----------------------------
+GRAY_THRESHOLD = 253
+N_LEDS = 3
+MIN_BLOB_SIZE = 5
+NEIGHBORHOOD = 5
+
+# -----------------------------
+# Helper functions
+# -----------------------------
+def find_led_blobs(gray):
+    _, binary = cv.threshold(gray, GRAY_THRESHOLD, 255, cv.THRESH_BINARY)
+    num_labels, _, stats, centroids = cv.connectedComponentsWithStats(binary)
+
+    blobs = []
+    for i in range(1, num_labels):
+        if stats[i, cv.CC_STAT_AREA] >= MIN_BLOB_SIZE:
+            cx, cy = centroids[i]
+            blobs.append((int(cx), int(cy)))
+    return blobs
+
+def get_3d_position(pc_data, px, py):
+    h, w, _ = pc_data.shape
+    r = NEIGHBORHOOD // 2
+    region = pc_data[max(py-r,0):min(py+r+1,h),
+                     max(px-r,0):min(px+r+1,w), :3]
+    valid = region[np.isfinite(region).all(axis=2)]
+    if len(valid) == 0:
+        return None
+    return valid.mean(axis=0)
+
+def euclidean_distance(a, b):
+    return np.linalg.norm(a - b)
+
+def assign_labels(world_coords):
+    pairs = list(itertools.combinations(range(3), 2))
+    dists = [(i, j, euclidean_distance(world_coords[i], world_coords[j])) for i,j in pairs]
+    dists.sort(key=lambda x: -x[2])
+
+    i1, j1, _ = dists[0]
+    i2, j2, _ = dists[1]
+    common = list(set([i1,j1]) & set([i2,j2]))[0]
+
+    labels = [""]*3
+    labels[common] = "p1"
+    labels[i1 if i1 != common else j1] = "p3"
+    labels[i2 if i2 != common else j2] = "p2"
+    return labels
+
+def compute_pose(world_coords):
+    p1, p2, p3 = world_coords
+    centroid = (p1 + p2 + p3) / 3.0
+
+    x_axis = p2 - p1
+    x_axis /= np.linalg.norm(x_axis)
+
+    temp = p3 - p1
+    z_axis = np.cross(x_axis, temp)
+    z_axis /= np.linalg.norm(z_axis)
+
+    y_axis = np.cross(z_axis, x_axis)
+
+    R = np.column_stack((x_axis, y_axis, z_axis))
+
+    thetaX = np.degrees(np.arctan2(R[2,1], R[2,2]))
+    thetaY = np.degrees(np.arctan2(-R[2,0], np.sqrt(R[0,0]**2 + R[1,0]**2)))
+    thetaZ = np.degrees(np.arctan2(R[1,0], R[0,0]))
+
+    return centroid, (thetaX, thetaY, thetaZ)
+
+# -----------------------------
+# Main
+# -----------------------------
+def main():
+    zed = sl.Camera()
+    init_params = sl.InitParameters()
+    init_params.camera_resolution = sl.RESOLUTION.HD1080
+    init_params.camera_fps = 30
+    init_params.coordinate_system = sl.COORDINATE_SYSTEM.LEFT_HANDED_Y_UP
+    init_params.coordinate_units = sl.UNIT.METER
+
+    if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+        return
+
+    left = sl.Mat()
+    point_cloud = sl.Mat()
+    runtime_params = sl.RuntimeParameters()
+
+    cv.namedWindow("LED Pose Detection")
+
+    while True:
+        if zed.grab(runtime_params) != sl.ERROR_CODE.SUCCESS:
+            continue
+
+        zed.retrieve_image(left, sl.VIEW.LEFT)
+        zed.retrieve_measure(point_cloud, sl.MEASURE.XYZ)
+
+        frame = left.get_data()
+        if frame.shape[2] == 4:
+            frame = cv.cvtColor(frame, cv.COLOR_BGRA2BGR)
+
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        thresh = np.zeros_like(gray)
+        thresh[gray >= GRAY_THRESHOLD] = 255
+
+        blobs = find_led_blobs(gray)
+        if len(blobs) < 3:
+            cv.imshow("LED Pose Detection", cv.cvtColor(thresh, cv.COLOR_GRAY2BGR))
+            if cv.waitKey(1) == 27:
+                break
+            continue
+
+        blobs = blobs[:3]
+        pc_data = point_cloud.get_data()
+
+        pixel_coords = []
+        world_coords = []
+
+        for px, py in blobs:
+            pos = get_3d_position(pc_data, px, py)
+            if pos is not None:
+                pixel_coords.append((px, py))
+                world_coords.append(pos)
+
+        if len(world_coords) != 3:
+            continue
+
+        world_coords = np.array(world_coords)
+        labels = assign_labels(world_coords)
+
+        display = cv.cvtColor(thresh, cv.COLOR_GRAY2BGR)
+
+        # draw triangle
+        for i, j in itertools.combinations(range(3), 2):
+            cv.line(display, pixel_coords[i], pixel_coords[j], (255, 0, 0), 2)
+
+        # draw p1 p2 p3
+        for (px, py), lbl in zip(pixel_coords, labels):
+            cv.putText(display, lbl, (px + 5, py - 5),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+        # -----------------------------
+        # Pose + centroid drawing
+        # -----------------------------
+        centroid, angles = compute_pose(world_coords)
+
+        cx = int(sum(p[0] for p in pixel_coords) / 3)
+        cy = int(sum(p[1] for p in pixel_coords) / 3)
+
+        # draw centroid marker
+        cv.putText(display, "c", (cx + 5, cy - 5),
+                   cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+        # draw pose next to centroid
+        cv.putText(display,
+                   f"X={centroid[0]:.3f} Y={centroid[1]:.3f} Z={centroid[2]:.3f}",
+                   (cx + 15, cy + 15),
+                   cv.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+
+        cv.putText(display,
+                   f"Rx={angles[0]:.1f} Ry={angles[1]:.1f} Rz={angles[2]:.1f}",
+                   (cx + 15, cy + 30),
+                   cv.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+
+        cv.imshow("LED Pose Detection", display)
+        if cv.waitKey(1) == 27:
+            break
+
+    zed.close()
+    cv.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
