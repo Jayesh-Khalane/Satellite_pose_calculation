@@ -17,10 +17,6 @@ def get_3d_position_at_pixel(pc, px, py):
 
 def find_blob_centroids(binary_mask):
     # Filter blobs: MIN_BLOB_SIZE = 20\
-
-
-
-    
     _, _, stats, centroids = cv.connectedComponentsWithStats(binary_mask)
     return [(int(c[0]), int(c[1])) for i, c in enumerate(centroids[1:]) 
             if stats[i+1, cv.CC_STAT_AREA] >= 20]

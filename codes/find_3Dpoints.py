@@ -72,6 +72,7 @@ def main():
                     x_3d = point_cloud_value[0]
                     y_3d = point_cloud_value[1]
                     z_3d = point_cloud_value[2]
+                    print("X :",x_3d ,"Y :", y_3d ,"Z :", z_3d)
 
                     if np.isfinite(x_3d) and np.isfinite(y_3d) and np.isfinite(z_3d):
                         label = f"P{i+1}: X={x_3d:.2f}, Y={y_3d:.2f}, Z={z_3d:.2f}m"
