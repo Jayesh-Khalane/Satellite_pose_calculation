@@ -80,7 +80,7 @@ def main():
             current_gray = gray.copy()
 
             # Threshold (your original logic)
-            _, thresh = cv.threshold(gray, 250, 255, cv.THRESH_BINARY)
+            _, thresh = cv.threshold(gray, 122, 255, cv.THRESH_BINARY)
 
             # Convert to BGR so we can draw colored overlays
             display = cv.cvtColor(thresh, cv.COLOR_GRAY2BGR)
