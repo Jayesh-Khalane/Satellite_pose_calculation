@@ -24,11 +24,12 @@ def main():
     # Initialize ZED 2i
     zed = sl.Camera()
     init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD720
+    init_params.camera_resolution = sl.RESOLUTION.HD1080
     init_params.camera_fps = 30
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA # Better for precise 3D coords
-    init_params.coordinate_units = sl.UNIT.METER
-    init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE # Standard for CV
+    init_params.coordinate_units = sl.UNIT.CENTIMETER
+    init_params.coordinate_system = sl.COORDINATE_SYSTEM.LEFT_HANDED_Y_UP # Standard for CV
+    
 
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         print("ZED 2i open failed. Check connection.")

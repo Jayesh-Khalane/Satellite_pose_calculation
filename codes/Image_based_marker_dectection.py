@@ -149,9 +149,9 @@ def main():
                 draw_orientation_axes(display, centroid, R_mat, calib)
                 
                 # UI Overlays
-                cv.putText(display, f"POSE: {centroid[0]:.1f}, {centroid[1]:.1f}, {centroid[2]:.1f}", 
+                cv.putText(display, f"POSE: {centroid[0]:.3f}, {centroid[1]:.3f}, {centroid[2]:.3f}", 
                            (15, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2, cv.LINE_AA)
-                cv.putText(display, f"ROT: X:{euler[0]:.1f} Y:{euler[1]:.1f} Z:{euler[2]:.1f}", 
+                cv.putText(display, f"ROT: X:{euler[0]:.2f} Y:{euler[1]:.2f} Z:{euler[2]:.2f}", 
                            (15, 55), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv.LINE_AA)
                 cv.putText(display, f"QUAT: {np.array2string(quat, precision=2, separator=',')}", 
                            (15, 80), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv.LINE_AA)
