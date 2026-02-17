@@ -1,0 +1,1 @@
+ffmpeg -i "D:\Satellite_pose_calculation\data\Captures\satellite_002.mp4" -vf "fps=2" "D:\Satellite_pose_calculation\data\MVS_dataset\002\images\frame_%04d.jpg"
