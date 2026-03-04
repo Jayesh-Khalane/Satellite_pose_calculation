@@ -1,0 +1,64 @@
+import cv2
+import numpy as np
+
+# Load camera or video
+cap = cv2.VideoCapture(0)  # replace with ZED capture if needed
+
+# ORB feature detector
+orb = cv2.ORB_create(1000)
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+# Store unique features
+unique_features = {}
+feature_counter = 0
+
+# Define color ranges in HSV for R, B, G, Y, W, O (approximate)
+color_ranges = {
+    "RED": ((0, 120, 70), (10, 255, 255)),
+    "BLUE": ((100, 150, 0), (140, 255, 255)),
+    "GREEN": ((40, 50, 50), (90, 255, 255)),
+    "YELLOW": ((20, 100, 100), (30, 255, 255)),
+    "WHITE": ((0, 0, 200), (180, 40, 255)),
+    "ORANGE": ((10, 100, 20), (25, 255, 255))
+}
+
+print("Press 'q' to quit.")
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # For each color, detect features
+    for color_name, (lower, upper) in color_ranges.items():
+        mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+        masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
+        gray = cv2.cvtColor(masked_frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect ORB features on the masked area
+        keypoints, descriptors = orb.detectAndCompute(gray, None)
+        if descriptors is not None:
+            for i, desc in enumerate(descriptors):
+                matched_id = None
+                # Match with existing unique features
+                for uf_id, uf_desc in unique_features.items():
+                    matches = bf.match(desc.reshape(1, -1), uf_desc.reshape(1, -1))
+                    if matches and matches[0].distance < 32:
+                        matched_id = uf_id
+                        break
+                if matched_id is None:
+                    feature_counter += 1
+                    unique_features[feature_counter] = desc
+                    matched_id = feature_counter
+                x, y = map(int, keypoints[i].pt)
+                cv2.circle(frame, (x, y), 4, (0, 255, 0), -1)
+                cv2.putText(frame, f"{matched_id}", (x+5, y-5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+
+    cv2.imshow("Unique Features on Cube Colors", frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
