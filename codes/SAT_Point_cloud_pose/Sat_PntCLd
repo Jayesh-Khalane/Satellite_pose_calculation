@@ -1,7 +1,7 @@
 import pyzed.sl as sl
 import open3d as o3d
 import numpy as np
-
+# this code is used to get sateltiite point cloud data and visualize it in real time, with a distance filter to only show points within 1.5 meters of the camera.
 def main():
     # Initialize ZED camera
     zed = sl.Camera()
@@ -59,9 +59,20 @@ def main():
                     xyz = xyz[idx]
                     colors = colors[idx]
 
+                # --- DISTANCE FILTERING LOGIC ---
+                # Calculate the Euclidean distance of each point from the camera origin (0,0,0)
+                distances = np.linalg.norm(xyz, axis=1)
+                
+                # Create a mask to only keep points less than 2 meters away
+                close_mask = distances < 1.5
+                
+                # Apply the mask to both coordinates and colors
+                xyz_close = xyz[close_mask]
+                colors_close = colors[close_mask]
+
                 # Update Open3D point cloud
-                pcd.points = o3d.utility.Vector3dVector(xyz)
-                pcd.colors = o3d.utility.Vector3dVector(colors)
+                pcd.points = o3d.utility.Vector3dVector(xyz_close)
+                pcd.colors = o3d.utility.Vector3dVector(colors_close)
 
                 if not geom_added:
                     vis.add_geometry(pcd)
@@ -77,7 +88,6 @@ def main():
     finally:
         zed.close()
         vis.destroy_window()
-
 
 if __name__ == "__main__":
     main()
