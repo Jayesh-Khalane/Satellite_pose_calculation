@@ -1,0 +1,8 @@
+opencv-python
+numpy
+open3d
+scikit-learn
+scipy
+pyvista
+pyqtgraph
+PyQt5
