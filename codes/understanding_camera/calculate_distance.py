@@ -17,7 +17,7 @@ def main():
     # Initialize ZED
     zed = sl.Camera()
     init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD1080
+    init_params.camera_resolution = sl.RESOLUTION.HD720
     init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS # or PERFORMANCE
     init_params.coordinate_units = sl.UNIT.METER
 
