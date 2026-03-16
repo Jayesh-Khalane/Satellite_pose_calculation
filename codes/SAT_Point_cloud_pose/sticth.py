@@ -9,8 +9,8 @@ import os
 
 # --- CONFIGURATION ---
 CAPTURE_COUNT = 3
-STAGE1_SEC = 10.0      # Time to move camera into position
-STAGE2_SEC = 10.0      # Time to average the LED tracking
+STAGE1_SEC = 15.0      # Time to move camera into positionclear
+STAGE2_SEC = 20.0      # Time to average the LED tracking
 MAX_DIST_CM = 100.0
 
 # --- CAMERA SERIAL NUMBERS ---
@@ -87,7 +87,7 @@ def render_dashboard(c1_fps, c1_miss, c1_tot, c1_status, pts_count, pose_ui,
     # --- CAM 1 (GLOBAL) ---
     out = "========================================================================\n"
     out += "                 [ CAM1 : GLOBAL SENSOR / LED TRACKING ]\n"
-    out += f" FPS: {c1_fps:<10}   Frame missed: {c1_miss:<10}  Total Frames: {c1_tot}\n"
+    out += f" FPS: {c1_fps:<10}   Frame missed: {c1_miss:<10}   Total Frames: {c1_tot}\n"
     out += f" STATUS: [ {c1_status:^15} ]         POINTS IN CLUSTER: {pts_count}\n"
     out += "------------------------------------------------------------------------\n"
     
@@ -105,7 +105,7 @@ def render_dashboard(c1_fps, c1_miss, c1_tot, c1_status, pts_count, pose_ui,
     # --- CAM 2 (LOCAL) ---
     out += "========================================================================\n"
     out += "                 [ CAM2 : LOCAL SENSOR / POINT CLOUD ]\n"
-    out += f" FPS: {c0_fps:<10}   Frame missed: {c0_miss:<10}  Total Frames: {c0_tot}\n"
+    out += f" FPS: {c0_fps:<10}   Frame missed: {c0_miss:<10}   Total Frames: {c0_tot}\n"
     out += f" STATUS: [ {c0_status:^15} ]\n"
     
     # --- PIPELINE ---
@@ -160,16 +160,15 @@ def main():
     pc0, pc1 = sl.Mat(), sl.Mat()
     runtime = sl.RuntimeParameters()
 
-    all_data_list = [] 
-    snapshot_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    all_local_list = [] 
+    all_stitched_list = []
+    snapshot_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)] # R, G, B
     captures_done = 0
     total_pts_saved = 0
     
-    # Separate Trackers for Cam0 and Cam1
     c0_tot, c0_miss = 0, 0
     c1_tot, c1_miss = 0, 0
     
-    # Historical Data for the UI Pipeline
     history = [{'pts': 0, 'pos': None, 'euler': None} for _ in range(CAPTURE_COUNT)]
 
     try:
@@ -182,12 +181,10 @@ def main():
                 
                 if err0 == sl.ERROR_CODE.SUCCESS: c0_tot += 1
                 else: c0_miss += 1
-                
                 if err1 == sl.ERROR_CODE.SUCCESS: c1_tot += 1
                 else: c1_miss += 1
                 
                 if err0 == sl.ERROR_CODE.SUCCESS and err1 == sl.ERROR_CODE.SUCCESS:
-                    # Cam1 UI Logic
                     cam1.retrieve_measure(pc1, sl.MEASURE.XYZRGBA)
                     R_cam, centroid, pts_count, ui_stats = track_leds(pc1.get_data())
                     
@@ -195,21 +192,17 @@ def main():
                     pose_ui = (ui_stats[0], ui_stats[1], centroid) if ui_stats else None
                     c1_fps = int(cam1.get_current_fps())
                     
-                    # Cam0 UI Logic
                     c0_stat = "LIVE STREAMING"
                     c0_fps = int(cam0.get_current_fps())
-                    
-                    # Pipeline UI Logic
                     timer_str = f"{int(STAGE1_SEC - (time.time() - stage1_start))}s"
                     
                     render_dashboard(c1_fps, c1_miss, c1_tot, c1_stat, pts_count, pose_ui,
                                      c0_fps, c0_miss, c0_tot, c0_stat,
                                      "STAGE 1: POSITIONING", timer_str, history, total_pts_saved)
 
-                    # Update Open3D Viewer
                     cam0.retrieve_measure(pc0, sl.MEASURE.XYZRGBA)
                     pc0_np = pc0.get_data()
-                    xyz = pc0_np[:, :, :3].reshape(-1, 3) * 100.0 # Convert to CM
+                    xyz = pc0_np[:, :, :3].reshape(-1, 3) * 100.0
                     valid_mask = np.isfinite(xyz).all(axis=1)
                     xyz_valid = xyz[valid_mask]
                     xyz_filtered = xyz_valid[np.linalg.norm(xyz_valid, axis=1) < MAX_DIST_CM]
@@ -254,8 +247,7 @@ def main():
                                      "STAGE 2: AVERAGING POSE", timer_str, history, total_pts_saved)
                     vis.poll_events()
 
-            if len(eulers) == 0:
-                continue # Silent loop restart on failure
+            if len(eulers) == 0: continue 
 
             # Calculate Final Average Math
             rads = np.radians(eulers)
@@ -264,7 +256,7 @@ def main():
             P_avg = np.mean(translations, axis=0)
             R_avg = R_tool.from_euler('xyz', avg_euler, degrees=True).as_matrix()
 
-            # ================= STAGE 3: STITCHING =================
+            # ================= STAGE 3: STITCHING & SAVING =================
             cam0.retrieve_measure(pc0, sl.MEASURE.XYZRGBA)
             pc0_np = pc0.get_data()
             xyz = pc0_np[:, :, :3].reshape(-1, 3) * 100.0
@@ -272,12 +264,14 @@ def main():
             xyz_valid = xyz[valid_mask]
             xyz_filtered = xyz_valid[np.linalg.norm(xyz_valid, axis=1) < MAX_DIST_CM]
 
-            transformed_pts = (xyz_filtered @ R_avg.T) + P_avg
-            
+            # Transform and Colorize
+            transformed_pts = (xyz_filtered @ R_avg) + P_avg
             r_col, g_col, b_col = snapshot_colors[captures_done]
-            color_array = np.full((transformed_pts.shape[0], 3), [r_col, g_col, b_col])
-            chunk = np.hstack((transformed_pts, color_array))
-            all_data_list.append(chunk)
+            color_array = np.full((xyz_filtered.shape[0], 3), [r_col, g_col, b_col])
+            
+            # Store chunks
+            all_local_list.append(np.hstack((xyz_filtered, color_array)))
+            all_stitched_list.append(np.hstack((transformed_pts, color_array)))
 
             # Update History
             history[captures_done]['pts'] = len(transformed_pts)
@@ -286,7 +280,6 @@ def main():
             total_pts_saved += len(transformed_pts)
             captures_done += 1
             
-            # Brief pause to show successful save
             render_dashboard(int(cam1.get_current_fps()), c1_miss, c1_tot, "SUCCESS", pts_count, pose_ui,
                              int(cam0.get_current_fps()), c0_miss, c0_tot, "LIDAR CAPTURED",
                              "SAVED TO MEMORY", "Done", history, total_pts_saved)
@@ -296,20 +289,31 @@ def main():
         pass
 
     # --- FINAL EXPORT ---
-    if all_data_list:
-        final_data = np.vstack(all_data_list)
+    if all_stitched_list:
         render_dashboard(0, c1_miss, c1_tot, "OFFLINE", 0, None, 
                          0, c0_miss, c0_tot, "OFFLINE",
-                         "SAVING CSV FILE...", "Please Wait", history, total_pts_saved)
-                         
-        with open("stitched.csv", "w", newline="") as f:
+                         "SAVING 3 FILES...", "Please Wait", history, total_pts_saved)
+        
+        # 1. Save local_point_cloud.csv (Local Camera coords)
+        np.savetxt("sat_point_cloud_capture.csv", np.vstack(all_local_list), delimiter=",", 
+                   header="X,Y,Z,R,G,B", comments="", fmt="%.4f")
+
+        # 2. Save stitched.csv (Global coords)
+        np.savetxt("stitched.csv", np.vstack(all_stitched_list), delimiter=",", 
+                   header="X,Y,Z,R,G,B", comments="", fmt="%.4f")
+        
+        # 3. Save capture_poses.csv
+        with open("capture_poses.csv", "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["X", "Y", "Z", "R", "G", "B"])
-            np.savetxt(f, final_data, delimiter=",", fmt="%.4f")
+            writer.writerow(["Capture_ID", "X_cm", "Y_cm", "Z_cm", "Roll", "Pitch", "Yaw"])
+            for i in range(CAPTURE_COUNT):
+                pos, rot = history[i]['pos'], history[i]['euler']
+                if pos is not None:
+                    writer.writerow([i+1, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2]])
             
         render_dashboard(0, c1_miss, c1_tot, "OFFLINE", 0, None, 
                          0, c0_miss, c0_tot, "OFFLINE",
-                         "FILE SAVED SUCCESSFULLY", "Complete", history, total_pts_saved)
+                         "FILES SAVED SUCCESSFULLY", "Complete", history, total_pts_saved)
     
     cam0.close()
     cam1.close()
