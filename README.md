@@ -8,7 +8,7 @@ A comprehensive system for **Satellite Pose Estimation** (x, y, z, roll, pitch, 
 
 ---
 
-## 🚀 Overview
+##  Overview
 
 The core objective of this project is to accurately determine the 6D pose of a satellite model in a laboratory environment. By utilizing both image-based and point-cloud-based detection strategies, the system can identify specific markers and calculate their spatial orientation relative to the camera's coordinate system.
 
@@ -20,7 +20,7 @@ The core objective of this project is to accurately determine the 6D pose of a s
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 The codebase is organized into functional modules for clarity and maintainability:
 
@@ -33,7 +33,7 @@ The codebase is organized into functional modules for clarity and maintainabilit
 
 ---
 
-## 🛠️ Technical Implementation
+##  Technical Implementation
 
 
 
@@ -46,7 +46,7 @@ The codebase is organized into functional modules for clarity and maintainabilit
 
 ---
 
-## ⚙️ Setup & Installation
+##  Setup & Installation
 
 1.  **Install ZED SDK:** Ensure the ZED SDK is installed on your system (Required for `pyzed`).
 2.  **Clone the Repository:**
@@ -64,7 +64,7 @@ The codebase is organized into functional modules for clarity and maintainabilit
 
 ---
 
-## 📜 License
+##  License
 
 This project is for internal research at the **Laboratory of Aeromechanical Autonomy (LAMA)** under the **Systems and Control Engineering Department**, **IIT Bombay**.
 
