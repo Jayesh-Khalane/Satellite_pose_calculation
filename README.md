@@ -29,19 +29,13 @@ The codebase is organized into functional modules for clarity and maintainabilit
 | `codes/LED_Marker_pose/` | Algorithms for detecting LED markers in 2D and 3D. |
 | `codes/SAT_Point_cloud_pose/` | Satellite-specific geometry analysis and point cloud processing. |
 | `codes/understanding_camera/` | Core utilities for ZED camera interaction, 3D point calculation, and visualization. |
-| `colmap-x64-windows-nocuda/` | Integrated COLMAP binaries for potential MVS reconstruction tasks. |
-| `ffmpeg/` | Multimedia utilities for video processing and frame extraction. |
+
 
 ---
 
 ## 🛠️ Technical Implementation
 
-### Detection Pipeline
-1.  **Image Acquisition:** Capturing stereo pairs using the ZED 2i SDK.
-2.  **Marker Localization:** 
-    *   **2D:** Kernel-based pixel coordinate extraction and K-means clustering.
-    *   **3D:** DBSCAN clustering on point clouds to isolate marker centroids.
-3.  **Pose Calculation:** Mapping 3D coordinates back to the satellite's reference frame to derive full 6D pose.
+
 
 ### Core Dependencies
 *   **ZED SDK / pyzed:** Primary interface for stereo camera data.
@@ -67,11 +61,14 @@ The codebase is organized into functional modules for clarity and maintainabilit
 
 ---
 
-## 📊 Performance & Goals
-*   **Target Accuracy:** < 1.5 cm error in position.
-*   **Current Focus:** Refining point cloud-based marker detection for improved robustness in varied lighting conditions.
 
 ---
 
 ## 📜 License
-This project is for internal research at the **LAMA Lab**. All rights reserved.
+
+This project is for internal research at the **Laboratory of Aeromechanical Autonomy (LAMA)** under the **Systems and Control Engineering Department**, **IIT Bombay**.
+
+**Project Investigator:** Prof. Srikant Sukumar  
+**Institutional Affiliation:** Indian Institute of Technology Bombay
+
+All rights reserved.
