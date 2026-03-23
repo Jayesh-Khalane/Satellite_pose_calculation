@@ -6,8 +6,8 @@ from scipy.spatial.transform import Rotation as R
 
 def visualize_debug_data():
     # File paths
-    sat = "sat_point_cloud_capture.csv"
-    poses_file = "capture_poses.csv"
+    sat = "log\sat_point_cloud_capture.csv"
+    poses_file = "log\capture_poses.csv"
 
     if not os.path.exists(sat) or not os.path.exists(poses_file):
         print("Error: Missing CSV files. Please run the capture script first.")

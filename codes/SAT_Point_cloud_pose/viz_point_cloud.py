@@ -3,7 +3,7 @@ import numpy as np
 
 # --- Load CSV ---
 #csv_file = "D:\Satellite_pose_calculation\sat_point_cloud_capture.csv"
-csv_file = "D:\Satellite_pose_calculation\stitched.csv"
+csv_file = r"D:\Satellite_pose_calculation\log\004_cleaned_satellite.csv"
 #csv_file = "D:\Satellite_pose_calculation\ICP_result.csv"
 data = np.genfromtxt(csv_file, delimiter=",", skip_header=1)
 
