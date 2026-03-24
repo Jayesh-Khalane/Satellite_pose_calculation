@@ -55,5 +55,5 @@ def visualize_ply(file_path):
     vis.destroy_window()
 
 if __name__ == "__main__":
-    path_to_ply = r"logs\data\sat.ply"
+    path_to_ply = r"logs\data\front.ply"  # Update this path to your PLY file
     visualize_ply(path_to_ply)
