@@ -10,7 +10,7 @@ def verify_stitching():
 
     # 1. Verify files exist
     if not os.path.exists(poses_file) or not os.path.exists(pcd_file):
-        print("Error: Missing CSV files. Run the capture script first.")
+        print("Error: Missing CSV files. Run the capture script first")
         return
 
     print("Loading data...")
