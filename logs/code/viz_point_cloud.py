@@ -2,7 +2,7 @@ import pyvista as pv
 import numpy as np
 
 # --- Load CSV ---
-csv_file = r"logs\data\sat.csv"
+csv_file = r"D:\Satellite_pose_calculation\logs\data\sat_point_cloud_capture.csv"
 data = np.genfromtxt(csv_file, delimiter=",", skip_header=1)
 
 xyz = data[:, 0:3]
