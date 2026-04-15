@@ -34,7 +34,7 @@ def preprocess_point_cloud(pcd, voxel_size):
     return pcd_down, pcd_fpfh
 
 # 1. Load the Point Clouds
-source_path = r"D:\Satellite_pose_calculation\logs\data\to_align_sat.ply"
+source_path = r"D:\Satellite_pose_calculation\logs\data\to_align_half_sat.ply"
 target_path = r"D:\Satellite_pose_calculation\logs\data\reference_sat.ply"
 
 source = o3d.io.read_point_cloud(source_path)

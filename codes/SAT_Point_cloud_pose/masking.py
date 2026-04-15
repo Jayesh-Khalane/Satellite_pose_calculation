@@ -83,7 +83,7 @@ def main():
                 # units = centimeters
                 # -----------------------------
                 distances = np.linalg.norm(xyz, axis=1)
-                mask = distances < 100   # 100 cm = 1 meter
+                mask = distances < 100   # 150 cm = 1.5 meters
 
                 xyz = xyz[mask]
                 colors = colors[mask]
