@@ -65,6 +65,6 @@ def pick_points(csv_path):
 if __name__ == "__main__":
     # Path to your cleaned satellite CSV
    # csv_file = r"logs\data\unscaled_satellite.csv"
-    csv_file = r"logs\data\scaled_satellite.csv"
+    csv_file = r"logs\data\separtion_ring.csv"
     
     pick_points(csv_file)

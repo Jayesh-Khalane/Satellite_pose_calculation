@@ -41,7 +41,6 @@ def visualize_ply(file_path):
     
     # 1. Set Background to Solid Black
     opt.background_color = np.asarray([0, 0, 0])
-    
     # 2. Set Point Size (Lower = Smaller)
     opt.point_size = 1.0 
     
@@ -60,5 +59,5 @@ def visualize_ply(file_path):
     vis.destroy_window()
 
 if __name__ == "__main__":
-    path_to_ply = r"logs/data/stitched_satellite.ply"  # Update this path to your PLY file
+    path_to_ply = r"D:\Satellite_pose_calculation\satellite_complete_scan.ply"  # Update this path to your PLY file
     visualize_ply(path_to_ply)
