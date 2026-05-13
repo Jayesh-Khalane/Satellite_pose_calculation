@@ -59,5 +59,5 @@ def visualize_ply(file_path):
     vis.destroy_window()
 
 if __name__ == "__main__":
-    path_to_ply = r"D:\Satellite_pose_calculation\satellite_complete_scan.ply"  # Update this path to your PLY file
+    path_to_ply = r"logs/data/to_align_half_sat.ply"  # Update this path to your PLY file
     visualize_ply(path_to_ply)
